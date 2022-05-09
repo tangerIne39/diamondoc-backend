@@ -1,0 +1,75 @@
+from django.db import models
+
+
+# Create your models here.
+
+class User(models.Model):
+    username = models.CharField(max_length=255, unique=True)
+    password = models.CharField(max_length=255)
+    email = models.CharField(max_length=255, unique=True)
+    description = models.TextField()
+
+
+class Group(models.Model):
+    group_name = models.CharField(max_length=255)
+    leader_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_time = models.DateTimeField()
+    description = models.TextField()
+
+
+class GroupMember(models.Model):
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
+class Document(models.Model):
+    title = models.CharField(max_length=255)
+    creator_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_time = models.DateTimeField()
+    modified_time = models.DateTimeField()
+    content = models.TextField()
+
+    modify_right = models.IntegerField()
+    share_right = models.IntegerField()
+    discuss_right = models.IntegerField()
+
+    others_modify_right = models.IntegerField()
+    others_share_right = models.IntegerField()
+    others_discuss_right = models.IntegerField()
+
+    recycled = models.IntegerField()
+    is_occupied = models.IntegerField()
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE)
+
+
+class DocumentUser(models.Model):
+    document_id = models.ForeignKey(Document, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    last_watch = models.DateTimeField()
+    favorite = models.IntegerField()
+    modified_time = models.IntegerField()
+    type = models.IntegerField()
+
+
+class Comment(models.Model):
+    document_id = models.ForeignKey(Document, on_delete=models.CASCADE)
+    creator_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_time = models.DateTimeField()
+
+
+class Notice(models.Model):
+    sender_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='n_sender')
+    receiver_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='n_receiver')
+    document_id = models.ForeignKey(Document, on_delete=models.CASCADE)
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE)
+    send_time = models.DateTimeField()
+    content = models.TextField()
+    type = models.IntegerField()
+
+
+class Message(models.Model):
+    sender_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='m_sender')
+    receiver_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='m_receiver')
+    send_time = models.DateTimeField()
+    content = models.TextField()
