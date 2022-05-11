@@ -419,7 +419,7 @@ def my_docs(request):
         doc = Document.objects.get(id=document.document.id)
         if doc.recycled == 0 and document.type != 1:
             doc_list.append(doc)
-    return sendmsg(doc_list)
+    return JsonResponse(doc_list)
 
 
 @csrf_exempt
@@ -430,7 +430,7 @@ def my_created_docs(request):
     for document in documents:
         if document.recycled == 0:
             res.append(document_to_content(document))
-    return sendmsg(res)
+    return JsonResponse(res)
 
 
 @csrf_exempt
@@ -440,7 +440,7 @@ def my_deleted_docs(request):
     res = []
     for document in documents:
         res.append(document_to_content(document))
-    return sendmsg(res)
+    return JsonResponse(res)
 
 
 @csrf_exempt
@@ -506,7 +506,7 @@ def tell_doc_right(request):
             'usertype': document_user.type,
             'isleader': False
         }
-    return sendmsg(response)
+    return JsonResponse(response)
 
 
 @csrf_exempt
@@ -520,7 +520,7 @@ def tell_current_doc_right(request):
         'others_share_right': document.others_share_right,
         'others_discuss_right': document.others_discuss_right,
     }
-    return sendmsg(response)
+    return JsonResponse(response)
 # ------------wlc------------
 
 
