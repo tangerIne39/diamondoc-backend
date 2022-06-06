@@ -37,9 +37,10 @@ urlpatterns = [
     path('tell_current_doc_right', tell_current_doc_right),
     # ------------wlc------------
     path('get_doccontent', get_doccontent),
+    path('get_doctitle',get_doctitle),
     path('get_group_docs', get_group_docs),
     path('modify_doc', modify_doc),
-    path('objects_notindoc_user', objects_notindoc_user),
+    path('query_notindoc_user', query_notindoc_user),
     path('personal_share_to', personal_share_to),
     path('group_doc_share_to', group_doc_share_to),
     path('favor_doc', favor_doc),
