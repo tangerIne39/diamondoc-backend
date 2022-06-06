@@ -2,7 +2,6 @@ import datetime
 import time
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q
 # Create your views here.
 # ------------yxy------------
 from .models import *
@@ -702,6 +701,41 @@ def get_doccontent(request):
             document_user.save()
         else:
             msg = "fail"
+            mcontent = ""
+    response = {
+        'message': msg,
+        'content': mcontent,
+        'time': mtime
+    }
+    return JsonResponse(response)
+
+
+@csrf_exempt
+def get_doctitle(request):
+    msg = ''
+    mtitle = ''
+    mtime = datetime.datetime.now()
+    if request.method == 'POST':
+        document = Document.objects.get(id=request.POST.get('documentID'))
+        user = User.objects.get(username=request.POST.get('username'))
+        if (document is None) or (user is None):
+            msg = "fail"
+            mtitle = ""
+            response = {
+                'message': msg,
+                'title': mtitle
+            }
+            return JsonResponse(response)
+        document_user = DocumentUser.objects.get(document=document, user=user)
+        if (document is not None) and (document_user is not None):
+            msg = "success"
+            mtitle = document.title
+            now = datetime.datetime.now()
+            mtime = now
+            document_user.last_watch = now
+            document_user.save()
+        else:
+            msg = "fail"
             mtitle = ""
     response = {
         'message': msg,
@@ -744,7 +778,7 @@ def modify_doc(request):
 
 
 @csrf_exempt
-def objects_notindoc_user(request):
+def query_notindoc_user(request):
     keyword = request.POST.get('keyword')
     id = request.POST.get('documentID')
     res = []
