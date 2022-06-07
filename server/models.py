@@ -39,7 +39,7 @@ class Document(models.Model):
 
     recycled = models.IntegerField()
     is_occupied = models.IntegerField()
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
 
 
 class DocumentUser(models.Model):
@@ -61,8 +61,8 @@ class Comment(models.Model):
 class Notice(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='n_sender')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='n_receiver')
-    document = models.ForeignKey(Document, on_delete=models.CASCADE)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, null=True)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     send_time = models.DateTimeField()
     content = models.TextField()
     type = models.IntegerField()
