@@ -941,7 +941,7 @@ def cancel_favor_doc(request):
     if request.method == 'POST':
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
-        document_user = DocumentUser.objects.get(document=document, user=user)
+        document_user = DocumentUser.objects.get(document=document, user=user, favorite=1)
         if document is not None and document_user.favorite == 1:
             msg = 'success'
             document_user.favorite = 0
