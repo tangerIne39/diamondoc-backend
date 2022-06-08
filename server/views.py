@@ -438,26 +438,31 @@ def invite_user(request):
     group = Group.objects.get(id=request.POST.get('groupid'))
     user = User.objects.get(id=request.POST.get('userid'))
     sender = User.objects.get(username=request.POST.get('leader_username'))
-    notice = Notice.objects.get(group=group, sender=sender, receiver=user, type=2)
+    try:
+        notice = Notice.objects.get(group=group, sender=sender, receiver=user, type=2)
+    except Notice.DoesNotExist:
+        new_notice = Notice(content=sender.username + "邀请你加入团队(" + group.group_name + ")", sender=sender, receiver=user,
+                            group=group, send_time=datetime.datetime.now(), type=2)
+        new_notice.save()
+        return sendmsg('success')
     if notice is not None:
         return sendmsg('success')
-    new_notice = Notice(content=sender.username + "邀请你加入团队(" + group.group_name + ")", sender=sender, receiver=user,
-                        group=group, send_time=datetime.datetime.now(), type=2)
-    new_notice.save()
-    return sendmsg('success')
 
 
 @csrf_exempt
 def apply_in_group(request):
     user = User.objects.get(username=request.POST.get('username'))
     group = Group.objects.get(group_name=request.POST.get('groupname'))
-    notice = Notice.objects.get(group=group, sender=user, type=6, receiver=group.leader)
+    try:
+        notice = Notice.objects.get(group=group, sender=user, type=6, receiver=group.leader)
+    except Notice.DoesNotExist:
+        new_notice = Notice(content=user.username + "申请加入团队(" + group.group_name + ")", sender=user,
+                            receiver=group.leader,
+                            group=group, send_time=datetime.datetime.now(), type=6)
+        new_notice.save()
+        return sendmsg('success')
     if notice is not None:
         return sendmsg('success')
-    new_notice = Notice(content=user.username + "申请加入团队(" + group.group_name + ")", sender=user, receiver=group.leader,
-                        group=group, send_time=datetime.datetime.now(), type=6)
-    new_notice.save()
-    return sendmsg('success')
 
 
 @csrf_exempt
@@ -610,12 +615,14 @@ def create_group_doc(request):
                             others_modify_right=request.POST.get('others_modify_right'),
                             others_share_right=request.POST.get('others_share_right'),
                             others_discuss_right=request.POST.get('others_discuss_right'),
-                            content=request.POST.get('content'), recycled=0, is_occupied=0, modified_time="1970-01-01 00:00:00")
+                            content=request.POST.get('content'), recycled=0, is_occupied=0,
+                            modified_time="1970-01-01 00:00:00")
     new_document.save()
 
     members = GroupMember.objects.filter(group=Group.objects.get(id=request.POST.get('groupid')))
     for member in members:
-        new_document_user = DocumentUser(document=new_document, user=member.user, last_watch="1970-01-01 00:00:00", favorite=0,
+        new_document_user = DocumentUser(document=new_document, user=member.user, last_watch="1970-01-01 00:00:00",
+                                         favorite=0,
                                          modified_time="1970-01-01 00:00:00", type=1)
         new_document_user.save()
     return sendmsg('success')
@@ -658,8 +665,9 @@ def my_deleted_docs(request):
 def tell_doc_right(request):
     document = Document.objects.get(id=request.POST.get('documentID'))
     user = User.objects.get(username=request.POST.get('username'))
-    document_user = DocumentUser.objects.get(document=document, user=user)
-    if document_user is None:
+    try:
+        document_user = DocumentUser.objects.get(document=document, user=user)
+    except DocumentUser.DoesNotExist:
         response = {
             'watch_right': False,
             'modify_right': False,
@@ -673,7 +681,8 @@ def tell_doc_right(request):
             'usertype': -1,
             'isleader': False
         }
-    elif user.id == document.creator_id:
+        return JsonResponse(response)
+    if user.id == document.creator_id:
         if document.group is not None:
             type = 0
         else:
@@ -1321,7 +1330,7 @@ def view_non_confirm_notice(request):
         stat = notice.type
         if stat == 0 or stat == 1 or stat == 3 or stat == 4 or stat == 5 or stat == 7 or stat == 8 or stat == 9:
             res.append(notice_to_content(notice))
-    return JsonResponse(res,safe=False)
+    return JsonResponse(res, safe=False)
 
 
 # 查看所有需要确认的消息(type=2) 需要有两个button，分别发出type=1、5的消息
