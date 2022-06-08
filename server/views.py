@@ -546,12 +546,11 @@ def quit_group(request):
 
 @csrf_exempt
 def delete_group(request):
-    Group.objects.get(id=request.POST.get('groupid')).delete()
     GroupMember.objects.filter(group=Group.objects.get(id=request.POST.get('groupid'))).delete()
-
     documents = Document.objects.filter(group=Group.objects.get(id=request.POST.get('groupid')))
     for document in documents:
         DocumentUser.objects.filter(document=document).delete()
+    Group.objects.get(id=request.POST.get('groupid')).delete()
     return sendmsg('success')
 
 
