@@ -475,7 +475,7 @@ def accept_application_addgroupmember(request):
     documents = Document.objects.filter(group=group)
     for document in documents:
         new_document_user = DocumentUser(document=document, user=user, last_watch="1970-01-01 00:00:00",
-                                         favorited=0, type=1, modified_time="1970-01-01 00:00:00")
+                                         favorite=0, type=1, modified_time="1970-01-01 00:00:00")
         new_document_user.save()
     return sendmsg('success')
 
@@ -825,7 +825,7 @@ def modify_doc(request):
         user = User.objects.get(username=request.POST.get('username'))
         msg = "success"
         now = datetime.datetime.now()
-        content = request.get('content')
+        content = request.POST.get('content')
         document.content = content
         document.modified_time = now
         document.save()
@@ -866,7 +866,7 @@ def personal_share_to(request):
         id = get_newid()
         newDU = DocumentUser(id=id, document_id=document.id,
                              user_id=target_user.id, last_watch="1970-01-01 00:00:00",
-                             favorited=0, type=0, modified_time="1970-01-01 00:00:00")
+                             favorite=0, type=0, modified_time="1970-01-01 00:00:00")
 
         # 发送消息
         id = get_newid()
@@ -895,7 +895,7 @@ def group_doc_share_to(request):
         id = get_newid()
         newDU = DocumentUser(id=id, document_id=document.id,
                              user_id=target_user.id, last_watch="1970-01-01 00:00:00",
-                             favorited=0, type=2, modified_time="1970-01-01 00:00:00")
+                             favorite=0, type=2, modified_time="1970-01-01 00:00:00")
 
         # 发送消息
         id = get_newid()
@@ -940,7 +940,7 @@ def cancel_favor_doc(request):
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
         document_user = DocumentUser.objects.get(document=document, user=user)
-        if document is not None and document_user.favorited == 1:
+        if document is not None and document_user.favorite == 1:
             msg = 'success'
             document_user.favorite = 0
             document_user.save()
@@ -1300,7 +1300,7 @@ def get_all_modified_time(request):
 # 获取用户未读所有的消息
 @csrf_exempt
 def get_all_notice(request):
-    receiver = User.objects.get(username=request.POST('receiver_username'))
+    receiver = User.objects.get(username=request.POST.get('receiver_username'))
     all_notice = Notice.objects.filter(receiver=receiver).all()
     res = []
     for notice in all_notice:
@@ -1322,7 +1322,7 @@ def del_new_notice(request):
 # 查看所有不需要确认的消息(type=0,1,3,4,5,7,8,9)
 @csrf_exempt
 def view_non_confirm_notice(request):
-    receiver = User.objects.get(username=request.POST('receiver_username'))
+    receiver = User.objects.get(username=request.POST.get('receiver_username'))
     all_notice = Notice.objects.filter(receiver=receiver).all()
     res = []
     for notice in all_notice:
