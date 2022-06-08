@@ -198,7 +198,6 @@ def notice_to_content(notice):
 def del_notice(id):
     notice = Notice.objects.get(id=id)
     notice.delete()
-    notice.save()
 
 
 def msg_to_content(sender, receiver, msg):
