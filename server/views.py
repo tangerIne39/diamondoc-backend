@@ -185,7 +185,7 @@ def notice_to_content(notice):
             'receiver_id': notice.receiver.id,
             'receiver_name': receiver.username,
             'group_id': notice.group.id,
-            'group_name': group.groupname,
+            'group_name': group.group_name,
             'document_id': "",
             'document_title': "",
             'datetime': notice.send_time,
