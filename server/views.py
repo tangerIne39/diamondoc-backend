@@ -30,20 +30,51 @@ def group_to_content(group):
     }
 
 
+# def document_to_content(document):
+#     content = {
+#         'id': document.id,
+#         'title': document.title,
+#         'creator_id': document.creator_id,
+#         'created_time': document.created_time,
+#         'modify_right': document.modify_right,
+#         'share_right': document.share_right,
+#         'discuss_right': document.discuss_right,
+#         'recycled': document.recycled,
+#         'is_occupied': document.is_occupied,  # 0: Not occupied, 1: Occupied
+#         'group_id': document.group.id,
+#         'modified_time': document.modified_time
+#     }
+#     return content
+
 def document_to_content(document):
-    content = {
-        'id': document.id,
-        'title': document.title,
-        'creator_id': document.creator_id,
-        'created_time': document.created_time,
-        'modify_right': document.modify_right,
-        'share_right': document.share_right,
-        'discuss_right': document.discuss_right,
-        'recycled': document.recycled,
-        'is_occupied': document.is_occupied,  # 0: Not occupied, 1: Occupied
-        'group_id': document.group.id,
-        'modified_time': document.modified_time
-    }
+    if document.group is None:
+        content = {
+            'id': document.id,
+            'title': document.title,
+            'creator_id': document.creator_id,
+            'created_time': document.created_time,
+            'modify_right': document.modify_right,
+            'share_right': document.share_right,
+            'discuss_right': document.discuss_right,
+            'recycled': document.recycled,
+            'is_occupied': document.is_occupied,  # 0: Not occupied, 1: Occupied
+            'group_id': 0,
+            'modified_time': document.modified_time
+        }
+    if document.group is not None:
+        content = {
+            'id': document.id,
+            'title': document.title,
+            'creator_id': document.creator_id,
+            'created_time': document.created_time,
+            'modify_right': document.modify_right,
+            'share_right': document.share_right,
+            'discuss_right': document.discuss_right,
+            'recycled': document.recycled,
+            'is_occupied': document.is_occupied,  # 0: Not occupied, 1: Occupied
+            'group_id': document.group.id,
+            'modified_time': document.modified_time
+        }
     return content
 
 
@@ -443,8 +474,8 @@ def accept_application_addgroupmember(request):
     Notice.objects.get(id=request.POST.get('id')).delete()
     documents = Document.objects.filter(group=group)
     for document in documents:
-        new_document_user = DocumentUser(document=document, user=user, last_watch=0,
-                                         favorited=0, type=1, modified_time=0)
+        new_document_user = DocumentUser(document=document, user=user, last_watch="1970-01-01 00:00:00",
+                                         favorited=0, type=1, modified_time="1970-01-01 00:00:00")
         new_document_user.save()
     return sendmsg('success')
 
@@ -519,23 +550,53 @@ def delete_group(request):
     return sendmsg('success')
 
 
+#
+# @csrf_exempt
+# def create_personal_doc(request):
+#     user = User.objects.get(username=request.POST.get('username'))
+#     new_document = Document(title=request.POST.get('title'), group=None, created_time=datetime.datetime.now(),
+#                             modified_time=0, creator_id=user.id, modify_right=request.POST.get('modify_right'),
+#                             share_right=request.POST.get('share_right'),
+#                             discuss_right=request.POST.get('discuss_right'),
+#                             others_modify_right=request.POST.get('modify_right'),
+#                             others_share_right=request.POST.get('share_right'),
+#                             others_discuss_right=request.POST.get('discuss_right'), content=request.POST.get('content'),
+#                             recycled=0, is_occupied=0)
+#     new_document.save()
+#
+#     new_document_user = DocumentUser(document=new_document, user=user, last_watch=0, favorite=0, modified_time=0,
+#                                      type=0)
+#     new_document_user.save()
+#     return sendmsg('success')
+
 @csrf_exempt
 def create_personal_doc(request):
-    user = User.objects.get(username=request.POST.get('username'))
-    new_document = Document(title=request.POST.get('title'), group=None, created_time=datetime.datetime.now(),
-                            modified_time=0, creator_id=user.id, modify_right=request.POST.get('modify_right'),
-                            share_right=request.POST.get('share_right'),
-                            discuss_right=request.POST.get('discuss_right'),
-                            others_modify_right=request.POST.get('modify_right'),
-                            others_share_right=request.POST.get('share_right'),
-                            others_discuss_right=request.POST.get('discuss_right'), content=request.POST.get('content'),
-                            recycled=0, is_occupied=0)
-    new_document.save()
+    msg = ''
+    if request.method == 'POST':
+        id = get_newid()
+        user = User.objects.get(username=request.POST.get('username'))
+        msg = "success"
+        new_document = Document(title=request.POST.get('title'), created_time=datetime.datetime.now(),
+                                modified_time="1970-01-01 00:00:00", creator_id=user.id,
+                                modify_right=request.POST.get('modify_right'),
+                                share_right=request.POST.get('share_right'),
+                                discuss_right=request.POST.get('discuss_right'),
+                                others_modify_right=request.POST.get('modify_right'),
+                                others_share_right=request.POST.get('share_right'),
+                                others_discuss_right=request.POST.get('discuss_right'),
+                                content=request.POST.get('content'),
 
-    new_document_user = DocumentUser(document=new_document, user=user, last_watch=0, favorite=0, modified_time=0,
-                                     type=0)
-    new_document_user.save()
-    return sendmsg('success')
+                                recycled=0, is_occupied=0)
+        new_document.save()
+
+        new_document_user = DocumentUser(document=new_document, user=user, last_watch="1970-01-01 00:00:00",
+                                         favorite=0, modified_time="1970-01-01 00:00:00",
+                                         type=0)
+        new_document_user.save()
+    response = {
+        'message': msg
+    }
+    return JsonResponse(response)
 
 
 @csrf_exempt
@@ -550,13 +611,13 @@ def create_group_doc(request):
                             others_modify_right=request.POST.get('others_modify_right'),
                             others_share_right=request.POST.get('others_share_right'),
                             others_discuss_right=request.POST.get('others_discuss_right'),
-                            content=request.POST.get('content'), recycled=0, is_occupied=0, modified_time=0)
+                            content=request.POST.get('content'), recycled=0, is_occupied=0, modified_time="1970-01-01 00:00:00")
     new_document.save()
 
     members = GroupMember.objects.filter(group=Group.objects.get(id=request.POST.get('groupid')))
     for member in members:
-        new_document_user = DocumentUser(document=new_document, user=member.user, last_watch=0, favorite=0,
-                                         modified_time=0, type=1)
+        new_document_user = DocumentUser(document=new_document, user=member.user, last_watch="1970-01-01 00:00:00", favorite=0,
+                                         modified_time="1970-01-01 00:00:00", type=1)
         new_document_user.save()
     return sendmsg('success')
 
@@ -570,7 +631,7 @@ def my_docs(request):
         doc = Document.objects.get(id=document.document.id)
         if doc.recycled == 0 and document.type != 1:
             doc_list.append(doc)
-    return JsonResponse(doc_list)
+    return JsonResponse(doc_list, safe=False)
 
 
 @csrf_exempt
@@ -614,7 +675,7 @@ def tell_doc_right(request):
             'isleader': False
         }
     elif user.id == document.creator_id:
-        if document.group.id != 0:
+        if document.group is not None:
             type = 0
         else:
             type = 1
@@ -632,7 +693,7 @@ def tell_doc_right(request):
             'isleader': True
         }
     else:
-        if document.group.id != 0:
+        if document.group is not None:
             type = 0
         else:
             type = 1
@@ -780,18 +841,18 @@ def modify_doc(request):
 @csrf_exempt
 def query_notindoc_user(request):
     keyword = request.POST.get('keyword')
-    id = request.POST.get('documentID')
+    # id = request.POST.get('documentID')
     res = []
     all_user = get_user_bykeyword(keyword)
-    all_document_user = get_user_indocument(id)
+    # all_document_user = get_user_indocument(id)
     for user in all_user:
-        if user not in all_document_user:
-            content = {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email
-            }
-            res.append(content)
+        # if user not in all_document_user:
+        content = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email
+        }
+        res.append(content)
     return JsonResponse(res, safe=False)
 
 
@@ -804,8 +865,8 @@ def personal_share_to(request):
         target_user = User.objects.get(id=request.POST.get('target_user_ID'))
         id = get_newid()
         newDU = DocumentUser(id=id, document_id=document.id,
-                             user_id=target_user.id, last_watch=0,
-                             favorited=0, type=0, modified_time=0)
+                             user_id=target_user.id, last_watch="1970-01-01 00:00:00",
+                             favorited=0, type=0, modified_time="1970-01-01 00:00:00")
 
         # 发送消息
         id = get_newid()
@@ -813,7 +874,7 @@ def personal_share_to(request):
         send_time = now.strftime('%Y-%m-%d')
         content = user.username + "分享给你了一个文档(" + document.title + ")"
         new_notice = Notice(id=id, sender_id=user.id, receiver_id=target_user.id, document_id=document.id,
-                            group_id=0, send_time=now, content=content, type=4
+                            send_time=now, content=content, type=4
                             )
         msg = 'success'
         new_notice.save()
@@ -833,8 +894,8 @@ def group_doc_share_to(request):
         target_user = User.objects.get(id=request.POST.get('target_user_ID'))
         id = get_newid()
         newDU = DocumentUser(id=id, document_id=document.id,
-                             user_id=target_user.id, last_watch=0,
-                             favorited=0, type=2, modified_time=0)
+                             user_id=target_user.id, last_watch="1970-01-01 00:00:00",
+                             favorited=0, type=2, modified_time="1970-01-01 00:00:00")
 
         # 发送消息
         id = get_newid()
@@ -842,7 +903,7 @@ def group_doc_share_to(request):
         send_time = now.strftime('%Y-%m-%d')
         content = user.username + "分享给你了一个文档(" + document.title + ")"
         new_notice = Notice(id=id, sender_id=user.id, receiver_id=target_user.id, document_id=document.id,
-                            group_id=0, send_time=now, content=content, type=4
+                            send_time=now, content=content, type=4
                             )
         msg = 'success'
         new_notice.save()
@@ -860,7 +921,7 @@ def favor_doc(request):
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
         document_user = DocumentUser.objects.get(document=document, user=user)
-        if document is not None and document_user.favorited == 0:
+        if document is not None and document_user.favorite == 0:
             msg = 'success'
             document_user.favorite = 1
             document_user.save()
@@ -942,7 +1003,7 @@ def group_doc_to_personal(request):
         for document_user in document_users:
             if document_user.id != user.id:
                 document_user.delete()
-        document.group.id = 0
+        document.group = None
         document.save()
         return sendmsg("success")
     return sendmsg("fail")
@@ -1050,13 +1111,28 @@ def del_complete_doc(request):
 
 
 # 显示最近使用文档
+# @csrf_exempt
+# def show_recent_doc(request):
+#     res = []
+#     user = get_user_byusername(request.POST.get('username'))
+#     all_documentuser = DocumentUser.objects.filter(user=user).order_by('-last_watch').all()
+#     all_documentuser = all_documentuser.exclude(last_watch=0).order_by('-last_watch').all()
+#     for DU in all_documentuser:
+#         document = Document.objects.get(id=DU.document.id)
+#         if document is None:
+#             continue
+#         if document.recycled == 0:
+#             res.append(document_to_content(document))
+#     return JsonResponse(res, safe=False)
+
+
 @csrf_exempt
 def show_recent_doc(request):
     res = []
     user = get_user_byusername(request.POST.get('username'))
-    all_documentuser = DocumentUser.objects.filter(user=user).order_by('-last_watch').all()
-    all_documentuser = all_documentuser.exclude(last_watch=0).order_by('-last_watch').all()
-    for DU in all_documentuser:
+    all_documentuser = DocumentUser.objects.filter(user=user).all().order_by('-last_watch')
+    all_documentuser_new = all_documentuser.exclude(last_watch="1970-01-01 00:00:00")
+    for DU in all_documentuser_new:
         document = Document.objects.get(id=DU.document.id)
         if document is None:
             continue
@@ -1179,7 +1255,7 @@ def create_comment(request):
         send_time = now.strftime('%Y-%m-%d')
         content = user.username + "给你的文档(" + document.title + ")发了一条评论"
         new_notice = Notice(id=id, sender_id=user.id, receiver_id=document.creator_id, document_id=document.id,
-                            group_id=0, send_time=now, content=content, type=3
+                            send_time=now, content=content, type=3
                             )
         new_notice.save()
     response = {
@@ -1207,7 +1283,7 @@ def get_all_modified_time(request):
     res = []
     document = Document.objects.get(id=request.POST.get('documentID'))
     all_modified_time = DocumentUser.objects.filter(document=document)
-    all_modified_time = all_modified_time.exclude(modified_time=0).order_by('-modified_time')
+    all_modified_time = all_modified_time.exclude(modified_time="1970-01-01 00:00:00").order_by('-modified_time')
     for tmp in all_modified_time:
         user = User.objects.get(id=tmp.user.id)
         res.append(modifiedtime_to_content(tmp, user))

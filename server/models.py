@@ -47,7 +47,7 @@ class DocumentUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     last_watch = models.DateTimeField()
     favorite = models.IntegerField()
-    modified_time = models.IntegerField()
+    modified_time = models.DateTimeField()
     type = models.IntegerField()
 
 
