@@ -94,14 +94,14 @@ def get_user_indocument(documentID):
     return all_user
 
 
-def get_newid():
-    time_now = int(time.time())
-    # 转换成localtime
-    time_local = time.localtime(time_now)
-    # 转换成新的时间格式(2016-05-09 18:59:20)
-    dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
-    id = time.mktime(time.strptime(dt, "%Y-%m-%d %H:%M:%S"))
-    return id
+# def get_newid():
+#     time_now = int(time.time())
+#     # 转换成localtime
+#     time_local = time.localtime(time_now)
+#     # 转换成新的时间格式(2016-05-09 18:59:20)
+#     dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
+#     id = time.mktime(time.strptime(dt, "%Y-%m-%d %H:%M:%S"))
+#     return id
 
 
 def get_user_byusername(username):
@@ -157,11 +157,11 @@ def created_info(document, user):
 
 def notice_to_content(notice):
     type = notice.type
-    sender = User.objects.get(id=notice.sender.id).first()
-    receiver = User.objects.get(id=notice.receiver.id).first()
+    sender = User.objects.get(id=notice.sender.id)
+    receiver = User.objects.get(id=notice.receiver.id)
     content = {}
     if type == 3 or type == 4:  # 关于文档
-        document = Document.objects.get(id=notice.document_id).first()
+        document = notice.document
         content = {
             'id': notice.id,
             'sender_id': notice.sender.id,
@@ -177,7 +177,7 @@ def notice_to_content(notice):
             'type': notice.type
         }
     elif type == 0 or type == 1 or type == 2 or type == 5 or type == 7 or type == 8 or type == 6 or type == 9:  # 关于小组
-        group = Group.objects.ger(id=notice.group.id)
+        group = notice.group
         content = {
             'id': notice.id,
             'sender_id': notice.sender.id,
@@ -573,11 +573,10 @@ def delete_group(request):
 def create_personal_doc(request):
     msg = ''
     if request.method == 'POST':
-        id = get_newid()
         user = User.objects.get(username=request.POST.get('username'))
         msg = "success"
         new_document = Document(title=request.POST.get('title'), created_time=datetime.datetime.now(),
-                                modified_time="1970-01-01 00:00:00", creator_id=user.id,
+                                modified_time="1970-01-01 00:00:00", creator=user,
                                 modify_right=request.POST.get('modify_right'),
                                 share_right=request.POST.get('share_right'),
                                 discuss_right=request.POST.get('discuss_right'),
@@ -862,18 +861,16 @@ def personal_share_to(request):
     if request.method == 'POST':
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
-        target_user = User.objects.get(id=request.POST.get('target_user_ID'))
-        id = get_newid()
-        newDU = DocumentUser(id=id, document_id=document.id,
-                             user_id=target_user.id, last_watch="1970-01-01 00:00:00",
+        target_user = User.objects.get(id=request.POST.get('target_user_username'))
+        newDU = DocumentUser(document=document,
+                             user=target_user, last_watch="1970-01-01 00:00:00",
                              favorite=0, type=0, modified_time="1970-01-01 00:00:00")
 
         # 发送消息
-        id = get_newid()
         now = datetime.datetime.now()
         send_time = now.strftime('%Y-%m-%d')
         content = user.username + "分享给你了一个文档(" + document.title + ")"
-        new_notice = Notice(id=id, sender_id=user.id, receiver_id=target_user.id, document_id=document.id,
+        new_notice = Notice(sender=user, receiver=target_user, document=document,
                             send_time=now, content=content, type=4
                             )
         msg = 'success'
@@ -891,18 +888,16 @@ def group_doc_share_to(request):
     if request.method == 'POST':
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
-        target_user = User.objects.get(id=request.POST.get('target_user_ID'))
-        id = get_newid()
-        newDU = DocumentUser(id=id, document_id=document.id,
-                             user_id=target_user.id, last_watch="1970-01-01 00:00:00",
+        target_user = User.objects.get(id=request.POST.get('target_user_username'))
+        newDU = DocumentUser(document=document,
+                             user=target_user, last_watch="1970-01-01 00:00:00",
                              favorite=0, type=2, modified_time="1970-01-01 00:00:00")
 
         # 发送消息
-        id = get_newid()
         now = datetime.datetime.now()
         send_time = now.strftime('%Y-%m-%d')
         content = user.username + "分享给你了一个文档(" + document.title + ")"
-        new_notice = Notice(id=id, sender_id=user.id, receiver_id=target_user.id, document_id=document.id,
+        new_notice = Notice(sender=user, receiver=target_user, document=document,
                             send_time=now, content=content, type=4
                             )
         msg = 'success'
@@ -1088,7 +1083,6 @@ def recover_doc(request):
 def del_complete_doc(request):
     msg = ''
     if request.method == 'POST':
-        id = get_newid()
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
         document_user = DocumentUser.objects.get(document=document, user=user)
@@ -1240,21 +1234,19 @@ def modify_group_doc_right(request):
 def create_comment(request):
     msg = ''
     if request.method == 'POST':
-        id = get_newid()
         user = User.objects.get(username=request.POST.get('username'))
         creator_id = user.id
         document = Document.objects.get(id=request.POST.get('documentID'))
         now = datetime.datetime.now()
         content = request.POST.get('content')
         msg = "success"
-        newComment = Comment(id=id, document_id=document.id, creator_id=creator_id, content=content, created_time=now)
+        newComment = Comment(document=document, creator=user, content=content, created_time=now)
         newComment.save()
 
         # 发送消息
-        id = get_newid()
         send_time = now.strftime('%Y-%m-%d')
         content = user.username + "给你的文档(" + document.title + ")发了一条评论"
-        new_notice = Notice(id=id, sender_id=user.id, receiver_id=document.creator_id, document_id=document.id,
+        new_notice = Notice(sender=user, receiver=document.creator, document=document,
                             send_time=now, content=content, type=3
                             )
         new_notice.save()
@@ -1329,7 +1321,7 @@ def view_non_confirm_notice(request):
         stat = notice.type
         if stat == 0 or stat == 1 or stat == 3 or stat == 4 or stat == 5 or stat == 7 or stat == 8 or stat == 9:
             res.append(notice_to_content(notice))
-    return JsonResponse(res)
+    return JsonResponse(res,safe=False)
 
 
 # 查看所有需要确认的消息(type=2) 需要有两个button，分别发出type=1、5的消息
@@ -1404,9 +1396,8 @@ def all_sort_notice(request):
 def sayhi(request):
     receiver = User.objects.get(username=request.POST.get('receiver_username'))
     sender = User.objects.get(username=request.POST.get('sender_username'))
-    id = get_newid()
     now = datetime.datetime.now()
-    new_msg = Message(id=id, sender_id=sender.id, receiver_id=receiver.id, send_time=now, content='hi')
+    new_msg = Message(sender=sender, receiver=receiver, send_time=now, content='hi')
     new_msg.save()
     response = {
         'message': 'success'
@@ -1418,10 +1409,9 @@ def sayhi(request):
 def send_msg_to_sb(request):
     receiver = User.objects.get(username=request.POST.get('receiver_username'))
     sender = User.objects.get(username=request.POST.get('sender_username'))
-    id = get_newid()
     now = datetime.datetime.now()
     content = request.POST.get('content')
-    new_msg = Message(id=id, sender_id=sender.id, receiver_id=receiver.id, send_time=now, content=content)
+    new_msg = Message(sender=sender, receiver=receiver, send_time=now, content=content)
     new_msg.save()
     response = {
         'id': id,
