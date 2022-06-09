@@ -395,7 +395,8 @@ def addgroupmember(request):
 
     documents = Document.objects.filter(group=group)
     for document in documents:
-        new_document_user = DocumentUser(document=document, user=user, type=1, favorite=0)
+        new_document_user = DocumentUser(document=document, user=user, type=1, favorite=0,
+                                         last_watch="1970-01-01 00:00:00", modified_time="1970-01-01 00:00:00")
         new_document_user.save()
     Notice.objects.get(id=request.POST.get('id')).delete()
     return sendmsg('success')
@@ -664,7 +665,7 @@ def tell_doc_right(request):
     document = Document.objects.get(id=request.POST.get('documentID'))
     user = User.objects.get(username=request.POST.get('username'))
     try:
-        document_user = DocumentUser.objects.get(document=document, user=user)
+        document_user = DocumentUser.objects.filter(document=document, user=user).first()
     except DocumentUser.DoesNotExist:
         response = {
             'watch_right': False,
@@ -758,7 +759,7 @@ def get_doccontent(request):
                 'content': mcontent
             }
             return JsonResponse(response)
-        document_user = DocumentUser.objects.get(document=document, user=user)
+        document_user = DocumentUser.objects.filter(document=document, user=user).first()
         if (document is not None) and (document_user is not None):
             msg = "success"
             mcontent = document.content
@@ -793,7 +794,7 @@ def get_doctitle(request):
                 'title': mtitle
             }
             return JsonResponse(response)
-        document_user = DocumentUser.objects.get(document=document, user=user)
+        document_user = DocumentUser.objects.filter(document=document, user=user).first()
         if (document is not None) and (document_user is not None):
             msg = "success"
             mtitle = document.title
@@ -835,7 +836,7 @@ def modify_doc(request):
         document.content = content
         document.modified_time = now
         document.save()
-        document_user = DocumentUser.objects.get(document=document, user=user)
+        document_user = DocumentUser.objects.filter(document=document, user=user).first()
         document_user.modified_time = now
         document_user.save()
     response = {
@@ -922,7 +923,7 @@ def favor_doc(request):
     if request.method == 'POST':
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
-        document_user = DocumentUser.objects.get(document=document, user=user)
+        document_user = DocumentUser.objects.filter(document=document, user=user).first()
         if document is not None and document_user.favorite == 0:
             msg = 'success'
             document_user.favorite = 1
@@ -941,7 +942,7 @@ def cancel_favor_doc(request):
     if request.method == 'POST':
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
-        document_user = DocumentUser.objects.get(document=document, user=user, favorite=1)
+        document_user = DocumentUser.objects.filter(document=document, user=user, favorite=1).first()
         if document is not None and document_user.favorite == 1:
             msg = 'success'
             document_user.favorite = 0
@@ -1092,7 +1093,7 @@ def del_complete_doc(request):
     if request.method == 'POST':
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
-        document_user = DocumentUser.objects.get(document=document, user=user)
+        document_user = DocumentUser.objects.filter(document=document, user=user).first()
         print(document is not None)
         print(document.recycled)
         print(document_user.delete_right)
