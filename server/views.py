@@ -1,5 +1,4 @@
 import datetime
-import time
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 # Create your views here.
@@ -47,6 +46,7 @@ def group_to_content(group):
 #     return content
 
 def document_to_content(document):
+    content = ""
     if document.group is None:
         content = {
             'id': document.id,
@@ -553,25 +553,6 @@ def delete_group(request):
     Group.objects.get(id=request.POST.get('groupid')).delete()
     return sendmsg('success')
 
-
-#
-# @csrf_exempt
-# def create_personal_doc(request):
-#     user = User.objects.get(username=request.POST.get('username'))
-#     new_document = Document(title=request.POST.get('title'), group=None, created_time=datetime.datetime.now(),
-#                             modified_time=0, creator_id=user.id, modify_right=request.POST.get('modify_right'),
-#                             share_right=request.POST.get('share_right'),
-#                             discuss_right=request.POST.get('discuss_right'),
-#                             others_modify_right=request.POST.get('modify_right'),
-#                             others_share_right=request.POST.get('share_right'),
-#                             others_discuss_right=request.POST.get('discuss_right'), content=request.POST.get('content'),
-#                             recycled=0, is_occupied=0)
-#     new_document.save()
-#
-#     new_document_user = DocumentUser(document=new_document, user=user, last_watch=0, favorite=0, modified_time=0,
-#                                      type=0)
-#     new_document_user.save()
-#     return sendmsg('success')
 
 @csrf_exempt
 def create_personal_doc(request):
@@ -1193,13 +1174,6 @@ def modify_personal_doc_right(request):
         document.others_discuss_right = others_discuss_right
         document.save()
         msg = "success"
-        #     "watch_right":watch_right,"modify_right":modify_right,"delete_right":delete_right,"discuss_right":discuss_right})
-        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"share_right":share_right,
-        #     "watch_right":watch_right,"modify_right":modify_right,"delete_right":delete_right,"discuss_right":discuss_right})
-        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"watch_right":watch_right})
-        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"modify_right":modify_right})
-        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"delete_right":delete_right})
-        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"discuss_right":discuss_right})
     response = {
         'message': msg
     }
@@ -1219,14 +1193,14 @@ def modify_group_doc_right(request):
         others_modify_right = request.POST.get('others_modify_right'),
         others_share_right = request.POST.get('others_share_right'),
         others_discuss_right = request.POST.get('others_discuss_right'),
-        Document.objects.filter(id=document.id).update({"share_right": share_right,
-                                                        "modify_right": modify_right,
-                                                        "discuss_right": discuss_right,
-                                                        "others_share_right": others_share_right,
-                                                        "others_modify_right": others_modify_right,
-                                                        "others_discuss_right": others_discuss_right})
+        document.share_right = share_right
+        document.modify_right = modify_right
+        document.discuss_right = discuss_right
+        document.others_share_right = others_share_right
+        document.others_modify_right = others_modify_right
+        document.others_discuss_right = others_discuss_right
+        document.save()
         msg = "success"
-
     response = {
         'message': msg
     }
