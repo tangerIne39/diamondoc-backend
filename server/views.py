@@ -1211,7 +1211,7 @@ def modify_personal_doc_right(request):
 def modify_group_doc_right(request):
     msg = ''
     if request.method == 'POST':
-        document = Document.objects.get(id=request.POST.get('DocumentID'))
+        document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
         share_right = request.POST.get('share_right')
         modify_right = request.POST.get('modify_right')
