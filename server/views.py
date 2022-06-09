@@ -1165,9 +1165,7 @@ def modify_personal_doc_right(request):
     if request.method == 'POST':
         document = Document.objects.get(id=request.POST.get('documentID'))
         others_share_right = request.POST.get('others_share_right')
-        # watch_right=request.POST.get['watch_right']
         others_modify_right = request.POST.get('others_modify_right')
-        # delete_right=request.POST.get['delete_right']
         others_discuss_right = request.POST.get('others_discuss_right')
         document.others_share_right = others_share_right
         document.others_modify_right = others_modify_right
@@ -1190,9 +1188,9 @@ def modify_group_doc_right(request):
         share_right = request.POST.get('share_right')
         modify_right = request.POST.get('modify_right')
         discuss_right = request.POST.get('discuss_right')
-        others_modify_right = request.POST.get('others_modify_right'),
-        others_share_right = request.POST.get('others_share_right'),
-        others_discuss_right = request.POST.get('others_discuss_right'),
+        others_modify_right = request.POST.get('others_modify_right')
+        others_share_right = request.POST.get('others_share_right')
+        others_discuss_right = request.POST.get('others_discuss_right')
         document.share_right = share_right
         document.modify_right = modify_right
         document.discuss_right = discuss_right
