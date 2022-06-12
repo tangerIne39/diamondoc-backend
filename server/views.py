@@ -46,7 +46,7 @@ def group_to_content(group):
 #     return content
 
 def document_to_content(document):
-    content = ""
+    content=''
     if document.group is None:
         content = {
             'id': document.id,
@@ -139,6 +139,7 @@ def modifiedtime_to_content(du, user):
     content = {
         'document_id': du.document.id,
         'username': user.username,
+        # 'username': du.creator.username,
         'datetime': du.modified_time,
         'content': '修改了文档'
     }
@@ -240,7 +241,10 @@ def login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        user = User.objects.get(username=username)
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return sendmsg('fail')
         if user.password != password:
             return sendmsg('fail')
         return JsonResponse(user_to_content(user))
@@ -396,7 +400,7 @@ def addgroupmember(request):
     documents = Document.objects.filter(group=group)
     for document in documents:
         new_document_user = DocumentUser(document=document, user=user, type=1, favorite=0,
-                                         last_watch="1970-01-01 00:00:00", modified_time="1970-01-01 00:00:00")
+                                         last_watch="1970-01-01 00:00:00", modified_time=datetime.datetime.now())
         new_document_user.save()
     Notice.objects.get(id=request.POST.get('id')).delete()
     return sendmsg('success')
@@ -436,7 +440,10 @@ def objectsuser(request):
 @csrf_exempt
 def invite_user(request):
     group = Group.objects.get(id=request.POST.get('groupid'))
-    user = User.objects.get(id=request.POST.get('userid'))
+    try:
+        user = User.objects.get(id=request.POST.get('userid'))
+    except User.DoesNotExist:
+        return sendmsg('fail')
     sender = User.objects.get(username=request.POST.get('leader_username'))
     try:
         notice = Notice.objects.get(group=group, sender=sender, receiver=user, type=2)
@@ -554,6 +561,25 @@ def delete_group(request):
     return sendmsg('success')
 
 
+#
+# @csrf_exempt
+# def create_personal_doc(request):
+#     user = User.objects.get(username=request.POST.get('username'))
+#     new_document = Document(title=request.POST.get('title'), group=None, created_time=datetime.datetime.now(),
+#                             modified_time=0, creator_id=user.id, modify_right=request.POST.get('modify_right'),
+#                             share_right=request.POST.get('share_right'),
+#                             discuss_right=request.POST.get('discuss_right'),
+#                             others_modify_right=request.POST.get('modify_right'),
+#                             others_share_right=request.POST.get('share_right'),
+#                             others_discuss_right=request.POST.get('discuss_right'), content=request.POST.get('content'),
+#                             recycled=0, is_occupied=0)
+#     new_document.save()
+#
+#     new_document_user = DocumentUser(document=new_document, user=user, last_watch=0, favorite=0, modified_time=0,
+#                                      type=0)
+#     new_document_user.save()
+#     return sendmsg('success')
+
 @csrf_exempt
 def create_personal_doc(request):
     msg = ''
@@ -616,7 +642,7 @@ def my_docs(request):
     for document in documents:
         doc = Document.objects.get(id=document.document.id)
         if doc.recycled == 0 and document.type != 1:
-            doc_list.append(doc)
+            doc_list.append(document_to_content(doc))
     return JsonResponse(doc_list, safe=False)
 
 
@@ -713,12 +739,12 @@ def tell_doc_right(request):
 def tell_current_doc_right(request):
     document = Document.objects.get(id=request.POST.get('documentID'))
     response = {
-        'modify_right': document.modify_right,
-        'share_right': document.share_right,
-        'discuss_right': document.discuss_right,
-        'others_modify_right': document.others_modify_right,
-        'others_share_right': document.others_share_right,
-        'others_discuss_right': document.others_discuss_right,
+        'modify_right': toTF(document.modify_right),
+        'share_right': toTF(document.share_right),
+        'discuss_right': toTF(document.discuss_right),
+        'others_modify_right': toTF(document.others_modify_right),
+        'others_share_right': toTF(document.others_share_right),
+        'others_discuss_right': toTF(document.others_discuss_right),
     }
     return JsonResponse(response)
 
@@ -850,7 +876,7 @@ def personal_share_to(request):
     if request.method == 'POST':
         document = Document.objects.get(id=request.POST.get('documentID'))
         user = User.objects.get(username=request.POST.get('username'))
-        target_user = User.objects.get(id=request.POST.get('target_user_username'))
+        target_user = User.objects.get(username=request.POST.get('target_user_name'))
         newDU = DocumentUser(document=document,
                              user=target_user, last_watch="1970-01-01 00:00:00",
                              favorite=0, type=0, modified_time="1970-01-01 00:00:00")
@@ -858,7 +884,8 @@ def personal_share_to(request):
         # 发送消息
         now = datetime.datetime.now()
         send_time = now.strftime('%Y-%m-%d')
-        content = user.username + "分享给你了一个文档(" + document.title + ")"
+        content = user.username + "分享给你了一个文档:http://localhost:8080/#/doc/"+request.POST.get('documentID')
+        # content = user.username + "分享给你了一个文档(" + document.title + ")"
         new_notice = Notice(sender=user, receiver=target_user, document=document,
                             send_time=now, content=content, type=4
                             )
@@ -1165,13 +1192,22 @@ def modify_personal_doc_right(request):
     if request.method == 'POST':
         document = Document.objects.get(id=request.POST.get('documentID'))
         others_share_right = request.POST.get('others_share_right')
+        # watch_right=request.POST.get['watch_right']
         others_modify_right = request.POST.get('others_modify_right')
+        # delete_right=request.POST.get['delete_right']
         others_discuss_right = request.POST.get('others_discuss_right')
         document.others_share_right = others_share_right
         document.others_modify_right = others_modify_right
         document.others_discuss_right = others_discuss_right
         document.save()
         msg = "success"
+        #     "watch_right":watch_right,"modify_right":modify_right,"delete_right":delete_right,"discuss_right":discuss_right})
+        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"share_right":share_right,
+        #     "watch_right":watch_right,"modify_right":modify_right,"delete_right":delete_right,"discuss_right":discuss_right})
+        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"watch_right":watch_right})
+        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"modify_right":modify_right})
+        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"delete_right":delete_right})
+        # db.session.objects(DocumentUser).filter(and_(DocumentUser.document_id==document.id,DocumentUser.user_id==user.id)).update({"discuss_right":discuss_right})
     response = {
         'message': msg
     }
@@ -1179,6 +1215,7 @@ def modify_personal_doc_right(request):
 
 
 # 团队文档创建者修改权限
+@csrf_exempt
 @csrf_exempt
 def modify_group_doc_right(request):
     msg = ''
@@ -1203,6 +1240,29 @@ def modify_group_doc_right(request):
         'message': msg
     }
     return JsonResponse(response)
+# def modify_group_doc_right(request):
+#     msg = ''
+#     if request.method == 'POST':
+#         document = Document.objects.get(id=request.POST.get('documentID'))
+#         user = User.objects.get(username=request.POST.get('username'))
+#         share_right = request.POST.get('share_right')
+#         modify_right = request.POST.get('modify_right')
+#         discuss_right = request.POST.get('discuss_right')
+#         others_modify_right = request.POST.get('others_modify_right'),
+#         others_share_right = request.POST.get('others_share_right'),
+#         others_discuss_right = request.POST.get('others_discuss_right'),
+#         Document.objects.filter(id=document.id).update({"share_right": share_right,
+#                                                         "modify_right": modify_right,
+#                                                         "discuss_right": discuss_right,
+#                                                         "others_share_right": others_share_right,
+#                                                         "others_modify_right": others_modify_right,
+#                                                         "others_discuss_right": others_discuss_right})
+#         msg = "success"
+#
+#     response = {
+#         'message': msg
+#     }
+#     return JsonResponse(response)
 
 
 ####################################
@@ -1217,6 +1277,11 @@ def create_comment(request):
         user = User.objects.get(username=request.POST.get('username'))
         creator_id = user.id
         document = Document.objects.get(id=request.POST.get('documentID'))
+        if document.others_discuss_right == 0:
+            response = {
+                'message': msg
+            }
+            return JsonResponse(response)
         now = datetime.datetime.now()
         content = request.POST.get('content')
         msg = "success"

@@ -12,13 +12,13 @@ class User(models.Model):
 
 class Group(models.Model):
     group_name = models.CharField(max_length=255)
-    leader = models.ForeignKey(User, on_delete=models.CASCADE)
+    leader = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     created_time = models.DateTimeField()
     description = models.TextField()
 
 
 class GroupMember(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
